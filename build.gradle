@@ -1,0 +1,47 @@
+plugins {
+  id 'org.ysb33r.nodejs.base'    version '0.9.3'  
+  id 'org.ysb33r.nodejs.npm'     version '0.9.3'  
+  id 'org.ysb33r.nodejs.dev'     version '0.9.3'  
+}
+
+ext {
+    asciidoctorWebPdf = '1.0.0-alpha.7' 
+}
+
+nodejs {
+    useSystemPath() 
+}
+
+npm {
+    homeDirectory = "${buildDir}/asciidoctor-web-pdf" 
+}
+
+dependencies {
+    npm npmPackage(name: 'asciidoctor-pdf', tag: asciidoctorWebPdf, type: 'dev') 
+}
+
+task initPackageJson(type: org.ysb33r.gradle.nodejs.tasks.NpmPackageJsonInit) 
+
+task syncPackageJson(type: org.ysb33r.gradle.nodejs.tasks.SyncProjectToPackageJson) { 
+    dependsOn initPackageJson 
+    forceSemver = false  
+    packageJsonVersion = '0.0.0'
+    packageJsonFile = initPackageJson.packageJsonFileProvider
+    npmConfigurations 'npm' 
+}
+
+task installAsciidoctorWebPdf(type: org.ysb33r.gradle.nodejs.tasks.NpmPackageJsonInstall) { 
+    dependsOn syncPackageJson
+}
+
+task runAsciidoctorWebPdf { 
+    dependsOn installAsciidoctorWebPdf
+    doLast {
+        nodeexec { 
+            workingDir npm.homeDirectoryProvider 
+            script 'node_modules/asciidoctor-pdf/bin/asciidoctor-pdf' 
+            scriptArgs 'basic-example.adoc' 
+            executable nodejs.resolvableNodeExecutable 
+        }
+    }
+}
